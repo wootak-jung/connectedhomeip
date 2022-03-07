@@ -88,8 +88,8 @@ bool TizenWiFiDriver::NetworkMatch(const WiFiNetwork & network, ByteSpan network
     }
     else if (memcmp(networkId.data(), network.ssid, network.ssidLen) != 0)
     {
-        ChipLogProgress(NetworkProvisioning, "ssid is mismatched. network.ssid: %s, networkId.data(): %s", network.ssid,
-                        networkId.data());
+        ChipLogProgress(NetworkProvisioning, "ssid is mismatched. network.ssid: %s, networkId.data(): %.*s", network.ssid,
+                        static_cast<int>(networkId.size()), networkId.data());
         return false;
     }
 
@@ -135,9 +135,11 @@ void TizenWiFiDriver::ConnectNetwork(ByteSpan networkId, ConnectCallback * callb
 
     VerifyOrExit(NetworkMatch(mStagingNetwork, networkId), networkingStatus = Status::kNetworkIDNotFound);
 
-    ChipLogProgress(NetworkProvisioning, "TizenNetworkCommissioningDelegate: SSID: %s", (char *) mStagingNetwork.ssid);
+    ChipLogProgress(NetworkProvisioning, "TizenNetworkCommissioningDelegate: SSID: %.*s", static_cast<int>(networkId.size()),
+                    networkId.data());
 
-    err = WiFiMgr().Connect((const char *) mStagingNetwork.ssid, (const char *) mStagingNetwork.credentials, callback);
+    err = WiFiMgr().Connect(reinterpret_cast<const char *>(mStagingNetwork.ssid),
+                            reinterpret_cast<const char *>(mStagingNetwork.credentials), callback);
 
 exit:
     if (err != CHIP_NO_ERROR)
